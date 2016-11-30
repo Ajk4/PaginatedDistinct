@@ -40,22 +40,27 @@ object DeepFunctions {
       }
   }
 
-  class UniquePriorityQueue[T] (implicit val ordering: Ordering[T]) extends Serializable {
+  class UniquePriorityQueue[T](implicit val ordering: Ordering[T]) extends Serializable {
 
-    private val priorityQueue = mutable.PriorityQueue.empty[T]
+    import java.util.{PriorityQueue => JPriorityQueue}
+
+    // Scala's queue works like 'smallest value first'
+    // Java's queue works like 'largest value first'
+    // Ordering is reversed to keep scala interface
+    private val priorityQueue = new JPriorityQueue[T](ordering.reverse)
     private val elementsMutableSet = mutable.Set.empty[T]
 
     def elementsInQueue: Set[T] = elementsMutableSet
 
     def enqueue(elem: T): Unit = {
-      if(!elementsMutableSet.contains(elem)){
+      if (!elementsMutableSet.contains(elem)) {
         elementsMutableSet += elem
-        priorityQueue.enqueue(elem)
+        priorityQueue.offer(elem)
       }
     }
 
     def dequeue(): T = {
-      val elem = priorityQueue.dequeue()
+      val elem = priorityQueue.poll()
       elementsMutableSet -= elem
       elem
     }

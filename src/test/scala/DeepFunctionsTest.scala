@@ -11,11 +11,13 @@ class DeepFunctionsTest extends FunSuite with Matchers {
       "A", "A", "A", "B", "C", "D", "A", "B",
       "A", "A", "A", "B", "C", "D", "A", "B",
       "A", "A", "A", "B", "C", "D", "A", "B",
-      "A", "A", "A", "B", "C", "D", "A", "B"
+      "A", "A", "A", "B", "C", "D", "A", "B",
+      "E", "F", "A", "G"
     ), 4)
 
     DeepFunctions.paginatedDistinct(rdd, 2) shouldEqual Set("A", "B")
     DeepFunctions.paginatedDistinct(rdd, 2, "B") shouldEqual Set("C", "D")
+    DeepFunctions.paginatedDistinct(rdd, 2, "D") shouldEqual Set("E", "F")
 
   }
 
