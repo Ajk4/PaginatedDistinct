@@ -16,7 +16,7 @@ object DeepFunctions {
 
     type Aggregator = UniquePriorityQueue[T]
 
-    def calculate(rdd: RDD[T]): Set[T] = rdd.aggregate(zero)(mergeValue, mergeCombiners).allElements
+    def calculate(rdd: RDD[T]): Set[T] = rdd.aggregate(zero)(mergeValue, mergeCombiners).elementsInQueue
 
     private val zero = new UniquePriorityQueue[T]()
 
@@ -27,7 +27,7 @@ object DeepFunctions {
     }
 
     private def mergeCombiners(left: Aggregator, right: Aggregator): Aggregator = {
-      for (elem <- right.allElements) {
+      for (elem <- right.elementsInQueue) {
         left.enqueue(elem)
       }
       truncate(left)
@@ -35,7 +35,7 @@ object DeepFunctions {
     }
 
     private def truncate(aggregator: Aggregator): Unit =
-      while (aggregator.size > pageSize) {
+      while (aggregator.elementsInQueue.size > pageSize) {
         aggregator.dequeue()
       }
   }
@@ -43,20 +43,20 @@ object DeepFunctions {
   class UniquePriorityQueue[T] (implicit val ordering: Ordering[T]) extends Serializable {
 
     private val priorityQueue = mutable.PriorityQueue.empty[T]
-    val allElements = mutable.Set.empty[T]
+    private val elementsMutableSet = mutable.Set.empty[T]
 
-    def size = allElements.size
+    def elementsInQueue: Set[T] = elementsMutableSet
 
     def enqueue(elem: T): Unit = {
-      if(!allElements.contains(elem)){
-        allElements += elem
+      if(!elementsMutableSet.contains(elem)){
+        elementsMutableSet += elem
         priorityQueue.enqueue(elem)
       }
     }
 
     def dequeue(): T = {
       val elem = priorityQueue.dequeue()
-      allElements -= elem
+      elementsMutableSet -= elem
       elem
     }
 
