@@ -14,30 +14,52 @@ object DeepFunctions {
 
   private case class PaginatedDistinct[T](pageSize: Int)(implicit ord: Ordering[T]) {
 
-    type Aggregator = mutable.SortedSet[T]
+    type Aggregator = UniquePriorityQueue[T]
 
-    def calculate(rdd: RDD[T]): Set[T] = rdd.aggregate(zero)(mergeValue, mergeCombiners)
+    def calculate(rdd: RDD[T]): Set[T] = rdd.aggregate(zero)(mergeValue, mergeCombiners).allElements
 
-    private val zero = mutable.SortedSet.empty[T]
+    private val zero = new UniquePriorityQueue[T]()
 
     private def mergeValue(acc: Aggregator, next: T): Aggregator = {
-      acc += next
+      acc.enqueue(next)
       truncate(acc)
       acc
     }
 
-    private def mergeCombiners(leftSet: Aggregator, rightSet: Aggregator): Aggregator = {
-      leftSet ++= rightSet
-      truncate(leftSet)
-      leftSet
+    private def mergeCombiners(left: Aggregator, right: Aggregator): Aggregator = {
+      for (elem <- right.allElements) {
+        left.enqueue(elem)
+      }
+      truncate(left)
+      left
     }
 
-    // TODO Better implementation of removing elements from mutable collection
     private def truncate(aggregator: Aggregator): Unit =
       while (aggregator.size > pageSize) {
-        // last iterates through full collection
-        aggregator -= aggregator.last
+        aggregator.dequeue()
       }
+  }
+
+  class UniquePriorityQueue[T] (implicit val ordering: Ordering[T]) extends Serializable {
+
+    private val priorityQueue = mutable.PriorityQueue.empty[T]
+    val allElements = mutable.Set.empty[T]
+
+    def size = allElements.size
+
+    def enqueue(elem: T): Unit = {
+      if(!allElements.contains(elem)){
+        allElements += elem
+        priorityQueue.enqueue(elem)
+      }
+    }
+
+    def dequeue(): T = {
+      val elem = priorityQueue.dequeue()
+      allElements -= elem
+      elem
+    }
+
   }
 
 }
