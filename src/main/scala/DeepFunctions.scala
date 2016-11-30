@@ -12,7 +12,7 @@ object DeepFunctions {
     PaginatedDistinct[T](pageSize).calculate(rdd.filter(x => ord.gt(x, lastValue)))
   }
 
-  case class PaginatedDistinct[T](pageSize: Int)(implicit ord: Ordering[T]) {
+  private case class PaginatedDistinct[T](pageSize: Int)(implicit ord: Ordering[T]) {
 
     type Aggregator = mutable.SortedSet[T]
 
