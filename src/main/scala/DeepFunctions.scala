@@ -47,7 +47,7 @@ object DeepFunctions {
     // Scala's queue works like 'smallest value first'
     // Java's queue works like 'largest value first'
     // Ordering is reversed to keep scala interface
-    private val priorityQueue = new JPriorityQueue[T](ordering.reverse)
+    private val priorityQueue = new JPriorityQueue[T](5, ordering.reverse)
     private val elementsMutableSet = mutable.Set.empty[T]
 
     def elementsInQueue: Set[T] = elementsMutableSet
