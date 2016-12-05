@@ -1,6 +1,7 @@
 import org.apache.spark.rdd.RDD
 
 import scala.collection._
+import java.util.TreeSet
 
 object DeepFunctions {
 
@@ -14,55 +15,30 @@ object DeepFunctions {
 
   private case class PaginatedDistinct[T](pageSize: Int)(implicit ord: Ordering[T]) {
 
-    type Aggregator = UniquePriorityQueue[T]
+    import collection.JavaConverters._
 
-    def calculate(rdd: RDD[T]): Set[T] = rdd.aggregate(zero)(mergeValue, mergeCombiners).elementsInQueue
+    type Aggregator = TreeSet[T]
 
-    private val zero = new UniquePriorityQueue[T]()
+    def calculate(rdd: RDD[T]): Set[T] = rdd.aggregate(zero)(mergeValue, mergeCombiners).asScala
+
+    private val zero = new TreeSet[T](ord)
 
     private def mergeValue(acc: Aggregator, next: T): Aggregator = {
-      acc.enqueue(next)
+      acc.add(next)
       truncate(acc)
       acc
     }
 
     private def mergeCombiners(left: Aggregator, right: Aggregator): Aggregator = {
-      for (elem <- right.elementsInQueue) {
-        left.enqueue(elem)
-      }
+      left.addAll(right)
       truncate(left)
       left
     }
 
-    private def truncate(aggregator: Aggregator): Unit =
-      while (aggregator.elementsInQueue.size > pageSize) {
-        aggregator.dequeue()
+    private def truncate(aggregator: Aggregator): Unit = {
+      while (aggregator.size > pageSize) {
+        aggregator.pollLast()
       }
-  }
-
-  class UniquePriorityQueue[T](implicit val ordering: Ordering[T]) extends Serializable {
-
-    import java.util.{PriorityQueue => JPriorityQueue}
-
-    // Scala's queue works like 'smallest value first'
-    // Java's queue works like 'largest value first'
-    // Ordering is reversed to keep scala interface
-    private val priorityQueue = new JPriorityQueue[T](5, ordering.reverse)
-    private val elementsMutableSet = mutable.Set.empty[T]
-
-    def elementsInQueue: Set[T] = elementsMutableSet
-
-    def enqueue(elem: T): Unit = {
-      if (!elementsMutableSet.contains(elem)) {
-        elementsMutableSet += elem
-        priorityQueue.offer(elem)
-      }
-    }
-
-    def dequeue(): T = {
-      val elem = priorityQueue.poll()
-      elementsMutableSet -= elem
-      elem
     }
 
   }
