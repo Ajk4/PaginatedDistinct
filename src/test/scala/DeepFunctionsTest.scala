@@ -18,6 +18,7 @@ class DeepFunctionsTest extends FunSuite with Matchers {
     DeepFunctions.paginatedDistinct(rdd, 2) shouldEqual Set("A", "B")
     DeepFunctions.paginatedDistinct(rdd, 2, "B") shouldEqual Set("C", "D")
     DeepFunctions.paginatedDistinct(rdd, 2, "D") shouldEqual Set("E", "F")
+    DeepFunctions.paginatedDistinct(rdd, 2, "F") shouldEqual Set("G")
 
   }
 
